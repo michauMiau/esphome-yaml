@@ -1,0 +1,88 @@
+#esphome: ...
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Create a new device in esphome device builder. It will autogenerate wifi credentials, secrets, and other things for you. Then just paste the the config below (adjust it for you of course)
+switch:
+  - platform: gpio
+    pin: GPIO1
+    inverted: true
+    id: relay
+    name: "Gate Remote"
+    icon: "mdi:gate"
+    on_turn_on:
+    - delay: 400ms
+    - switch.turn_off: relay    # any lines after this are optional
+    - switch.turn_on: light_relay     
+    - delay: 700ms
+    - switch.turn_off: light_relay
+    - delay: 700ms
+    - switch.turn_on: light_relay
+    - delay: 700ms
+    - switch.turn_off: light_relay
+    - delay: 700ms
+    - switch.turn_on: light_relay
+    - delay: 700ms
+    - switch.turn_off: light_relay
+    - delay: 700ms
+    - switch.turn_on: light_relay
+    - delay: 700ms
+    - switch.turn_off: light_relay
+    - delay: 700ms
+    - switch.turn_on: light_relay
+    - delay: 700ms
+    - switch.turn_off: light_relay
+    - delay: 700ms
+    - switch.turn_on: light_relay
+    - delay: 700ms
+    - switch.turn_off: light_relay
+    - delay: 700ms
+    - switch.turn_on: light_relay
+    - delay: 700ms
+    - switch.turn_off: light_relay
+    - delay: 700ms
+    - switch.turn_on: light_relay
+    - delay: 700ms
+    - switch.turn_off: light_relay  #crimes hehe
+
+  # Gate Light (optional)
+  - platform: gpio
+    pin:
+      number: GPIO2
+      inverted: true
+    id: light_relay
+    name: "Światło Bramy"
+    restore_mode: RESTORE_DEFAULT_OFF
+
+# Binary sensor for Gate
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: false
+    name: "Brama Otwarta"
+    id: gate_open_sensor
+
+# Gate as cover 
+# Cover Gate using binary_sensor
+cover:
+  - platform: template
+    name: "Brama Wjazdowa"
+    device_class: gate
+    id: gate_cover
+
+    # logic for gate state based on gate_open_sensor
+    lambda: |-
+      if (id(gate_open_sensor).state) {
+        return COVER_OPEN;
+      } else {
+        return COVER_CLOSED;
+      }
+
+    open_action:
+      - switch.turn_on: relay
+
+    close_action:
+      - switch.turn_on: relay
+
+    stop_action:
+      - switch.turn_on: relay
