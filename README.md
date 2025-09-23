@@ -10,11 +10,11 @@ For this to be an alarm clock you still have to add a speaker
 [Yaml here](https://github.com/michauMiau/esphome-yaml/blob/d5dfe3b3843629f59e7c62d79e5335c259569c4e/gate.yaml)
 soon
 
-# Blinds based on stepper motoe
+# Blinds based on stepper motor
 
 (insert here)
 
-[Yaml here](https://github.com/michauMiau/esphome-yaml/blob/d5dfe3b3843629f59e7c62d79e5335c259569c4e/gate.yaml)
+[Yaml here](https://github.com/michauMiau/esphome-yaml/blob/3c15e16260f9a75fdfcdec9790d7b81a3392a57f/blinds.yaml)
 
 # Gate/Garage Door Opener 
 based on a remote(one button) and a contact sensor that detects wheter the gate is opened or not
