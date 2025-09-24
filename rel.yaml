@@ -1,0 +1,162 @@
+esphome:
+    name: testhost
+
+host:
+
+logger:
+api:
+#^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
+
+switch:              #Insert Things here
+  - platform: homeassistant
+    id: light_ha
+    entity_id: light.wiz
+    internal: true
+  - platform: template
+    id: Screen_on      #Keep the screen on
+    turn_on_action:
+        - display.page.show: timemenu
+        
+
+button:
+  - platform: restart
+    id: restart_but       
+#    internal: true   #Uncomment to disable restart button in HA      
+
+script:  #Turns off screen after an interval, resets the timer every time it's called
+  - id: oledoff_timer
+    mode: restart
+    then:
+      - logger.log: "Timer fired!"
+      - delay: 15s
+      - if:
+            condition:
+                  switch.is_off: Screen_on
+            then:
+                - display.page.show: blank
+            else:
+                - display.page.show: timemenu  
+      
+# Fonts FIX POLISH CHARACTERS AND USE DIFFRENT FONT
+font:
+  - file: "arial.ttf"
+    id: small_font
+    size: 12
+  - file: "arial.ttf"
+    id: large_font
+    size: 20
+
+# Display and Pages ADJUST FOR PROD
+display:
+  - platform: sdl
+    id: oled_display
+    dimensions:
+      width: 128
+      height: 64
+    update_interval: 100ms
+    pages:
+      - id: timemenu
+        lambda: |-
+          it.print(0, 10, id(small_font), "Time here");
+      - id: blank
+        lambda: |-
+          it.print(0, 10, id(small_font), "");
+    
+      
+# GUI menu entry FILL FOR PROD
+graphical_display_menu:
+  id: menu
+  display: oled_display
+  on_redraw:
+    then:
+      component.update: oled_display
+  active: false
+  mode: rotary
+  font: small_font
+  items:                   #ITEMS
+    - type: back
+      text: 'Back'
+      
+    - type: switch
+      immediate_edit: true
+      text: 'Swiat?o'
+      on_text: 'Bright'
+      off_text: 'Dark'
+      switch: light_ha
+      
+    - type: label
+      text: !lambda |-
+        return "Templated label";
+    - type: command
+      text: 'Czas'
+      on_value:
+         then:
+           - display.page.show: timemenu
+           
+    - type: command
+      text: 'U?pij'
+      on_value:
+         then:
+           - display.page.show: blank
+           
+    - type: command
+      text: '!Restart!'
+      on_value:
+         then:
+           - button.press: restart_but
+
+# Input keys CHANGE FOR PRODUCTION
+binary_sensor:
+  - platform: sdl
+    id: key_up
+    key: SDLK_a
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.up: menu
+
+  - platform: sdl
+    id: key_down
+    key: SDLK_s
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.down: menu
+
+  - platform: sdl
+    id: key_left
+    key: SDLK_d
+    on_press:
+      then:
+      - display_menu.show: menu
+  - platform: sdl
+    id: key_right
+    key: SDLK_f
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.enter: menu
