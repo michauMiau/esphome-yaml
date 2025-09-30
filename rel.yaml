@@ -3,7 +3,7 @@ esphome:
 
 host:
 
-logger:
+logger: #0 bauds
 api:
 #^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
 
