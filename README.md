@@ -5,7 +5,7 @@ My yaml configs for esphome (def not vibecoded)
 
 I have no idea what to call this (maybe prehistoric dashboard?)
 
-It consists of: Smol OLED Display, Buttons(or rotary knob whichever one you like), Microcontroller, GUI menu to control things around your room, Clock 
+It consists of: Smol OLED Display, Buttons (or rotary knob whichever one you like), Microcontroller, GUI menu to control things around your room, Clock 
 
 For this to be an alarm clock you still have to add a speaker
 
