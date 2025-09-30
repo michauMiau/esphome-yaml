@@ -22,3 +22,6 @@ Blind motor that uses the uln2003 motor driver + some 3d printed parts
 based on a remote(one button) and a contact sensor that detects wheter the gate is opened or not
 
 [Yaml here](https://github.com/michauMiau/esphome-yaml/blob/d5dfe3b3843629f59e7c62d79e5335c259569c4e/gate.yaml)
+
+#
+I'd like to thank our benefactors for allowing this to happen
