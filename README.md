@@ -10,7 +10,8 @@ It consists of: Smol OLED Display, Buttons (or rotary knob whichever one you lik
 For this to be an alarm clock you still have to add a speaker
 
 [Yaml here](https://github.com/michauMiau/esphome-yaml/blob/ca624ee7792400c6b089adcec9874378aeb38857/OLED.yaml)
-soon
+
+To actually use this yourself you still have to make a lot of changes so be warned!
 
 # Blinds based on stepper motor
 
