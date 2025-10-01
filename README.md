@@ -1,5 +1,7 @@
 ##esphome-yaml
+
 My yaml configs for esphome (def not vibecoded)
+
 ** [TODO](https://github.com/michauMiau/esphome-yaml/blob/ca624ee7792400c6b089adcec9874378aeb38857/OLED.yaml)
 # The AlarmClock/Nighttime device for controling your smarthome
 
