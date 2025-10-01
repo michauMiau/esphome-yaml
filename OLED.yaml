@@ -6,8 +6,8 @@ logger: #0 bauds
 
 api:
 #^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
-
-switch:              #Insert Things here
+# Here are the things you need to adjust for ha
+switch:             
   - platform: homeassistant
     id: light_ha
     entity_id: light.wiz_rgbww_tunable_ad1dee
@@ -23,6 +23,12 @@ sensor:
   - platform: homeassistant
     id: inside_temperature
     entity_id: weather.forecast_dom
+    internal: true
+    
+cover:
+  - platform: homeassistant
+    id: blind_cover
+    entity_id: cover.pico_zaslony   #replace with your blinds
     internal: true
 
 text_sensor:
@@ -121,6 +127,21 @@ graphical_display_menu:
       on_value:
          then:
            - display.page.show: timemenu
+
+    - type: command
+      text: "Blind"
+      on_value:
+        then:
+          - lambda: |-
+              if (id(blind_cover).position.has_value()) {
+                if (id(blind_cover).position > 0.5) {
+                  id(blind_cover).make_call().set_command_open(false).perform();  // Close if mostly open
+                } else {
+                  id(blind_cover).make_call().set_command_open(true).perform();   // Open if closed
+                }
+              } else {
+                id(blind_cover).make_call().set_command_open(true).perform();     // Default to open
+              }
            
     - type: switch
       immediate_edit: true
