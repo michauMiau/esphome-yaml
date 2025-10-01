@@ -1,9 +1,9 @@
 esphome:
     name: testhost
-
 host:
 
 logger: #0 bauds
+
 api:
 #^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
 
@@ -13,15 +13,30 @@ switch:              #Insert Things here
     entity_id: light.wiz
     internal: true
   - platform: template
+    internal: false
     id: Screen_on      #Keep the screen on
     turn_on_action:
         - display.page.show: timemenu
         
+sensor:
+  - platform: homeassistant
+    id: inside_temperature
+    entity_id: REPLACEME
+    internal: true
 
+text_sensor:
+  - platform: homeassistant
+    entity_id: time.budzik #replace
+    name: "Alarm time"
+    id: alarm_state
+    internal: true
+    
 button:
   - platform: restart
     id: restart_but       
-#    internal: true   #Uncomment to disable restart button in HA      
+    internal: false   #Set to false disable restart button in HA      
+
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Things from ha to adjust
 
 script:  #Turns off screen after an interval, resets the timer every time it's called
   - id: oledoff_timer
@@ -37,16 +52,20 @@ script:  #Turns off screen after an interval, resets the timer every time it's c
             else:
                 - display.page.show: timemenu  
       
-# Fonts FIX POLISH CHARACTERS AND USE DIFFRENT FONT
-font:
-  - file: "arial.ttf"
-    id: small_font
-    size: 12
-  - file: "arial.ttf"
-    id: large_font
-    size: 20
 
-# Display and Pages ADJUST FOR PROD
+font:
+  - file: "gfonts://Silkscreen"
+    id: small_font
+    size: 10
+  - file: "gfonts://Roboto"
+    id: large_font
+    size: 24
+    
+time:
+  - platform: homeassistant
+    id: esptime
+
+# Display and Pages blank,timemenu ADJUST FOR PROD
 display:
   - platform: sdl
     id: oled_display
@@ -55,9 +74,24 @@ display:
       height: 64
     update_interval: 100ms
     pages:
-      - id: timemenu
+      - id: timemenu # from example see: https://esphome.io/cookbook/display_time_temp_oled/
         lambda: |-
-          it.print(0, 10, id(small_font), "Time here");
+      // Print time until alarm in top center
+      it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm State: %s", id(alarm_state).state.c_str());
+      
+      // Print time in HH:MM format
+      it.strftime(0, 60, id(large_font), TextAlign::BASELINE_LEFT, "%H:%M", id(esptime).now());
+
+      // Print inside temperature (from homeassistant sensor)
+      if (id(inside_temperature).has_state()) {
+        it.printf(127, 23, id(small_font), TextAlign::TOP_RIGHT , "%.1f", id(inside_temperature).state);
+      }
+
+      // Print outside temperature (from homeassistant weather)
+      if (id(outside_temperature).has_state()) {
+        it.printf(127, 60, id(medium), TextAlign::BASELINE_RIGHT , "%.1f%s",
+                  id(outside_temperature).state, id(outside_temperature_unit).state.c_str());
+      }
       - id: blank
         lambda: |-
           it.print(0, 10, id(small_font), "");
@@ -73,7 +107,7 @@ graphical_display_menu:
   active: false
   mode: rotary
   font: small_font
-  items:                   #ITEMS
+  items:                   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Menu items to adjust
     - type: back
       text: 'Back'
       
@@ -86,7 +120,8 @@ graphical_display_menu:
       
     - type: label
       text: !lambda |-
-        return "Templated label";
+        return "REPLACE";
+        
     - type: command
       text: 'Czas'
       on_value:
