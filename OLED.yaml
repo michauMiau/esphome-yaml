@@ -25,11 +25,6 @@ sensor:
     entity_id: weather.forecast_dom
     internal: true
     
-cover:
-  - platform: homeassistant
-    id: blind_cover
-    entity_id: cover.pico_zaslony   #replace with your blinds
-    internal: true
 
 text_sensor:
   - platform: homeassistant
@@ -129,19 +124,13 @@ graphical_display_menu:
            - display.page.show: timemenu
 
     - type: command
-      text: "Blind"
+      text: "Zasłony"
       on_value:
         then:
-          - lambda: |-
-              if (id(blind_cover).position.has_value()) {
-                if (id(blind_cover).position > 0.5) {
-                  id(blind_cover).make_call().set_command_open(false).perform();  // Close if mostly open
-                } else {
-                  id(blind_cover).make_call().set_command_open(true).perform();   // Open if closed
-                }
-              } else {
-                id(blind_cover).make_call().set_command_open(true).perform();     // Default to open
-              }
+          - homeassistant.action:
+              action: cover.toggle
+              target:
+                entity_id: cover.pico_zaslony
            
     - type: switch
       immediate_edit: true
