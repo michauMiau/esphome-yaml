@@ -129,8 +129,7 @@ graphical_display_menu:
         then:
           - homeassistant.action:
               action: cover.toggle
-              target:
-                entity_id: cover.pico_zaslony
+              entity_id: cover.pico_zaslony
            
     - type: switch
       immediate_edit: true
