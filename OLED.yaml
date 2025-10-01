@@ -1,1 +1,200 @@
-Soon
+esphome:
+    name: testhost
+host:
+
+logger: #0 bauds
+
+api:
+#^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
+
+switch:              #Insert Things here
+  - platform: homeassistant
+    id: light_ha
+    entity_id: light.wiz_rgbww_tunable_ad1dee
+    internal: true
+    
+  - platform: template
+    internal: false
+    id: Screen_on      #Keep the screen on
+    turn_on_action:
+        - display.page.show: timemenu
+        
+sensor:
+  - platform: homeassistant
+    id: inside_temperature
+    entity_id: weather.forecast_dom
+    internal: true
+
+text_sensor:
+  - platform: homeassistant
+    entity_id: input_datetime.budzik 
+    name: "Alarm time"
+    id: alarm_state
+    internal: true
+    
+button:
+  - platform: restart
+    id: restart_but       
+    internal: false   #Set to false disable restart button in HA      
+
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Things from ha to adjust
+
+script:  #Turns off screen after an interval, resets the timer every time it's called
+  - id: oledoff_timer
+    mode: restart
+    then:
+      - logger.log: "Timer fired!"
+      - delay: 15s
+      - if:
+            condition:
+                  switch.is_off: Screen_on
+            then:
+                - display.page.show: blank
+            else:
+                - display.page.show: timemenu  
+      
+
+font:
+  - file: "gfonts://Roboto"
+    id: small_font
+    size: 12
+    extras:
+      - file: "gfonts://Roboto"
+        glyphs: [ł,ś,Ł] #if you are using a foreign language or special characters, you have to add them here
+  - file: "gfonts://Bitcount+Ink"
+    id: large_font
+    size: 28
+    
+time:
+  - platform: homeassistant
+    id: esptime
+
+# Display and Pages blank,timemenu ADJUST FOR PROD
+display:
+  - platform: sdl
+    id: oled_display
+    dimensions:
+      width: 128
+      height: 64
+    update_interval: 100ms
+    pages:
+      - id: timemenu
+        lambda: |-
+          // Print time until alarm in top center
+          it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm: %s", id(alarm_state).state.c_str());
+
+          // Print time in HH:MM format
+          it.strftime(0, 60, id(large_font), TextAlign::BASELINE_LEFT, "%H:%M", id(esptime).now());
+
+          // Print inside temperature
+          if (id(inside_temperature).has_state()) {
+            it.printf(127, 23, id(small_font), TextAlign::TOP_RIGHT , "%.1f", id(inside_temperature).state);
+          }
+
+
+      - id: blank
+        lambda: |-
+          it.print(0, 10, id(small_font), "");
+      
+# GUI menu entry FILL FOR PROD
+graphical_display_menu:
+  id: menu
+  display: oled_display
+  on_redraw:
+    then:
+      component.update: oled_display
+  active: false
+  mode: joystick
+  font: small_font
+  items:    
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Menu items to adjust
+    - type: command
+      text: !lambda |-
+        char buffer[6];
+        auto time = id(esptime).now();
+        if (time.is_valid()) {
+          time.strftime(buffer, sizeof(buffer), "%H:%M");
+          return std::string(buffer);
+        } else {
+          return std::string("Time unavail-");
+        }
+      on_value:
+         then:
+           - display.page.show: timemenu
+           
+    - type: switch
+      immediate_edit: true
+      text: 'Swiatło'
+      on_text: 'WŁ'
+      off_text: 'WYŁ'
+      switch: light_ha
+           
+    - type: command
+      text: 'Uśpij'
+      on_value:
+         then:
+           - display.page.show: blank
+           
+    - type: command
+      text: '!Restart!'
+      on_value:
+         then:
+           - button.press: restart_but
+      
+
+# Input keys CHANGE FOR PRODUCTION
+binary_sensor:
+  - platform: sdl
+    id: key_up
+    key: SDLK_a
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.up: menu
+
+  - platform: sdl
+    id: key_down
+    key: SDLK_s
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.down: menu
+
+  - platform: sdl
+    id: key_left
+    key: SDLK_d
+    on_press:
+      then:
+      - display_menu.show: menu
+  - platform: sdl
+    id: key_right
+    key: SDLK_f
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.enter: menu
+
