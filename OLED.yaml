@@ -72,11 +72,13 @@ time:
 
 # Display and Pages blank,timemenu ADJUST FOR PROD
 display:
-  - platform: sdl
+  - platform: ssd1306_i2c #if using SPI replace i2c with spi
+    model: "SSD1306 128x64"
+    reset_pin: D0
     id: oled_display
-    dimensions:
-      width: 128
-      height: 64
+#    dimensions:
+#      width: 128
+#      height: 64
     update_interval: 100ms
     pages:
       - id: timemenu
