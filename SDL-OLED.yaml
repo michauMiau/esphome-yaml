@@ -1,0 +1,9 @@
+#THIS file contains things you need to get the OLED.yaml project running on SDL (how i used to test everything before getting real hardware
+esphome:
+    name: testhost
+host:
+
+logger: #0 bauds
+
+api:
+#^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
