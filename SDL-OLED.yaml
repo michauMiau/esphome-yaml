@@ -7,3 +7,59 @@ logger: #0 bauds
 
 api:
 #^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
+
+# Input keys FOR SDL
+binary_sensor:
+  - platform: sdl
+    id: key_up
+    key: SDLK_a
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.up: menu
+
+  - platform: sdl
+    id: key_down
+    key: SDLK_s
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.down: menu
+
+  - platform: sdl
+    id: key_left
+    key: SDLK_d
+    on_press:
+      then:
+      - display_menu.show: menu
+  - platform: sdl
+    id: key_right
+    key: SDLK_f
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.enter: menu
