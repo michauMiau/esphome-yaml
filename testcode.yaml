@@ -1,3 +1,15 @@
 binary_sensor:
  - platform: gpio
    name: key1
+   pin: GPIO8
+- platform: gpio
+   name: key1
+   pin: GPIO8
+- platform: gpio
+   name: key1
+   pin: GPIO8
+- platform: gpio
+   name: key1
+   pin: GPIO8- platform: gpio
+   name: key1
+   pin: GPIO8
