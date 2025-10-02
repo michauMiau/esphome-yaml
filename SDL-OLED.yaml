@@ -8,6 +8,15 @@ logger: #0 bauds
 api:
 #^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
 
+display:
+  - platform: sdl
+    id: oled_display
+    dimensions:
+      width: 128
+      height: 64
+    update_interval: 100ms
+
+
 # Input keys FOR SDL
 binary_sensor:
   - platform: sdl
