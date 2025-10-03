@@ -58,13 +58,13 @@ script:  #Turns off screen after an interval, resets the timer every time it's c
 font:
   - file: "gfonts://Roboto"
     id: small_font
-    size: 12
+    size: 14
     extras:
       - file: "gfonts://Roboto"
         glyphs: [ł,ś,Ł] #if you are using a foreign language or special characters, you have to add them here
   - file: "gfonts://Bitcount+Ink"
     id: large_font
-    size: 30
+    size: 31
     
 time:
   - platform: homeassistant
