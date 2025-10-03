@@ -74,7 +74,7 @@ i2c: # Replace with spi if using it
  - id: bus_oled
    sda: GPIO8
    scl: GPIO9
-# Display and Pages blank,timemenu ADJUST FOR PROD
+# Display and Pages
 display:
     i2c_id: bus_oled
     model: "SSD1306 128x64"
