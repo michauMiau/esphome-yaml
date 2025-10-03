@@ -1,0 +1,70 @@
+#temporary code until my buttons arrive
+i2c:
+ - id: bus_oled
+   sda: GPIO8
+   scl: GPIO9
+
+sensor:
+  - platform: homeassistant
+    id: inside_temperature
+    entity_id: sensor.oled_control_living_room_temperature
+    internal: true
+  - platform: homeassistant
+    id: inside_humidity
+    entity_id: sensor.oled_control_living_room_humidity
+    internal: true
+  - platform: homeassistant
+    id: distance
+    entity_id: sensor.oled_control_moving_distance
+    internal: true
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+
+font:
+  - file: "gfonts://Roboto"
+    id: small_font
+    size: 14
+    extras:
+      - file: "gfonts://Roboto"
+        glyphs: [ł,ś,Ł] #if you are using a foreign language or special characters, you have to add them here
+  - file: "gfonts://Bitcount+Ink"
+    id: large_font
+    size: 31
+
+binary_sensor:
+  - platform: status
+    name:  espstatus
+
+    
+time:
+  - platform: homeassistant
+    id: esptime
+
+display:
+  - platform: ssd1306_i2c
+    i2c_id: bus_oled
+    model: "SSD1306 128x64"
+#    reset_pin: D0
+    address: 0x3C
+    lambda: |-
+     // Print time until alarm in top center
+      // it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "obecnos %s", id(alarm_state).state.c_str());
+
+     // Print time in HH:MM format
+      it.strftime(0, 60, id(large_font), TextAlign::BASELINE_LEFT, "%H:%M", id(esptime).now());
+
+     // Print inside temperature
+      if (id(inside_temperature).has_state()) {
+       it.printf(127, 23, id(small_font), TextAlign::TOP_RIGHT , "%.1f", id(inside_temperature).state);
+     }
+
+      // Print inside humidity
+      if (id(inside_humidity).has_state()) {
+        it.printf(127, 40, id(small_font), TextAlign::TOP_RIGHT , "%.1f", id(inside_humidity).state);
+     }
+
+      // Print distance
+      if (id(distance).has_state()) {
+       it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER , "%.1f", id(distance).state);
+      }
+

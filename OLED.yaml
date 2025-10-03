@@ -64,19 +64,26 @@ font:
         glyphs: [ł,ś,Ł] #if you are using a foreign language or special characters, you have to add them here
   - file: "gfonts://Bitcount+Ink"
     id: large_font
-    size: 28
+    size: 30
     
 time:
   - platform: homeassistant
     id: esptime
 
-# Display and Pages blank,timemenu ADJUST FOR PROD
+i2c: # Replace with spi if using it
+ - id: bus_oled
+   sda: GPIO8
+   scl: GPIO9
+# Display and Pages
 display:
-  - platform: sdl
+    i2c_id: bus_oled
+    model: "SSD1306 128x64"
+#    reset_pin: D0
+    address: 0x3C
     id: oled_display
-    dimensions:
-      width: 128
-      height: 64
+#    dimensions:
+#      width: 128
+#      height: 64
     update_interval: 100ms
     pages:
       - id: timemenu
