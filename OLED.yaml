@@ -28,7 +28,13 @@ sensor:
     id: inside_temperature
     entity_id: sensor.oled_control_living_room_temperature
     internal: true
-
+    #more here
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 5m
+    entity_category: "diagnostic"
+    
 text_sensor:
   - platform: homeassistant
     entity_id: input_datetime.budzik 
@@ -154,15 +160,9 @@ graphical_display_menu:
       on_value:
          then:
            - display.page.show: blank
-           
-    - type: command
-      text: '!Restart!'
-      on_value:
-         then:
-           - button.press: restart_but
 
     - type: menu
-      text: 'Test Submenu'
+      text: 'Budzik'
       on_enter:
         then:
           lambda: 'ESP_LOGI("display_menu", "enter: %s", it->get_text().c_str());'
@@ -170,11 +170,42 @@ graphical_display_menu:
         then:
           lambda: 'ESP_LOGI("display_menu", "leave: %s", it->get_text().c_str());'
       items:
-        - type: label
-          text: 'Label'
         - type: back
           text: 'Back'
-      
+        - type: command
+          text: 'Ustaw na 6:30'
+          on_value:
+            then: 
+              - homeassistant.action:
+              #fill with action
+        - type: label
+          text: 'Insert Wifi strength here'
+
+
+
+    - type: menu
+      text: 'Ustawienia'
+      on_enter:
+        then:
+          lambda: 'ESP_LOGI("display_menu", "enter: %s", it->get_text().c_str());'
+      on_leave:
+        then:
+          lambda: 'ESP_LOGI("display_menu", "leave: %s", it->get_text().c_str());'
+      items:
+        - type: back
+          text: 'Back'
+                 
+        - type: command
+          text: '!Restart!'
+          on_value:
+             then:
+               - button.press: restart_but
+        - type: command
+          text: 'Ustaw na 5:30'
+          on_value:
+            then: 
+              - homeassistant.action:
+              #fill with action
 
 # Input keys CHANGE FOR PRODUCTION
 binary_sensor:
