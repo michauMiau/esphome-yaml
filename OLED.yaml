@@ -32,7 +32,7 @@ sensor:
   - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
     name: "WiFi Signal dB"
     id: wifi_signal_db
-    update_interval: 5m
+    update_interval: 5min
     entity_category: "diagnostic"
     
 text_sensor:
@@ -65,12 +65,12 @@ script:  #Turns off screen after an interval, resets the timer every time it's c
       
 
 font:
-  - file: "gfonts://Roboto"
+  - file: "gfonts://Google+Sans+Code"
     id: small_font
     size: 14
     extras:
-      - file: "gfonts://Roboto"
-        glyphs: [ł,ś,Ł] #if you are using a foreign language or special characters, you have to add them here
+      - file: "gfonts://Google+Sans+Code"
+        glyphs: [ł,ś,Ł,←] #if you are using a foreign language or special characters, you have to add them here
   - file: "gfonts://BBH+Sans+Bogle"
     id: large_font
     size: 31
@@ -85,38 +85,70 @@ i2c: # Replace with spi if using it
    scl: GPIO9
 # Display and Pages
 display:
+  - platform: ssd1306_i2c
     i2c_id: bus_oled
     model: "SSD1306 128x64"
     address: 0x3C
     id: oled_display
     update_interval: 100ms
     pages:
-      - id: timemenu
-        lambda: |-
-          // Print time until alarm in top center
-          it.printf(0, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm: %s", id(alarm_state).state.c_str());
+     - id: timemenu
+       lambda: |-
+        // --- Alarm time display and countdown ---
+        if (id(alarm_state).state.empty()) {
+          it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm: None");
+        } else {
+          auto now = id(esptime).now();
+          if (!now.is_valid()) {
+            it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm: --:--");
+          } else {
+            // Parse HH:MM from the alarm_state text
+            int alarm_hour = 0, alarm_min = 0;
+            sscanf(id(alarm_state).state.c_str(), "%d:%d", &alarm_hour, &alarm_min);
 
-          // Print time in HH:MM format
-          it.strftime(0, 60, id(large_font), TextAlign::BASELINE_LEFT, "%H:%M", id(esptime).now());
+            // Convert both times to minutes since midnight
+            int current_minutes = now.hour * 60 + now.minute;
+            int alarm_minutes = alarm_hour * 60 + alarm_min;
 
-          // Print inside temperature
-          if (id(inside_temperature).has_state()) {
-            it.printf(127, 23, id(small_font), TextAlign::TOP_RIGHT , "%.1f", id(inside_temperature).state);
+            // Handle next-day alarms
+            if (alarm_minutes <= current_minutes) {
+              alarm_minutes += 24 * 60;
+            }
+
+            // Calculate time difference
+            int diff = alarm_minutes - current_minutes;
+            int hours = diff / 60;
+            int minutes = diff % 60;
+
+            // Print alarm time and time until alarm
+            char buf[64];
+            sprintf(buf, "Alarm: %02d:%02d (in %dh %02dm)", alarm_hour, alarm_min, hours, minutes);
+            it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "%s", buf);
           }
-          // Print outside temperature (from homeassistant weather)
-          if (id(weather_temperature).has_state()) {
-            it.printf(127, 60, id(medium), TextAlign::BASELINE_RIGHT , "%.1f%s",
-                      id(weather_temperature).state, id(weather_temperature_unit).state.c_str());
-          }
+        }
+
+        // --- Current time ---
+        it.strftime(0, 60, id(large_font), TextAlign::BASELINE_LEFT, "%H:%M", id(esptime).now());
+
+        // --- Inside temperature ---
+        if (id(inside_temperature).has_state()) {
+          it.printf(127, 23, id(small_font), TextAlign::TOP_RIGHT , "%.1f°", id(inside_temperature).state);
+        }
+
+        // --- Outside temperature ---
+        if (id(weather_temperature).has_state()) {
+          it.printf(127, 60, id(small_font), TextAlign::BASELINE_RIGHT , "%.1f%s",
+                    id(weather_temperature).state, id(weather_temperature_unit).state.c_str());
+        }
 
 
-      - id: blank
-        lambda: |-
+     - id: blank
+       lambda: |-
           it.print(0, 10, id(small_font), "");
       
 # GUI menu entry FILL FOR PROD
 graphical_display_menu:
-  id: menu
+- id: menu
   display: oled_display
   on_redraw:
     then:
@@ -143,10 +175,12 @@ graphical_display_menu:
     - type: command
       text: "Zasłony"
       on_value:
-        then:
-          - homeassistant.action:
+       then:
+           - homeassistant.action:
               action: cover.toggle
-              entity_id: cover.pico_zaslony
+              data:
+                entity_id: cover.pico_zaslony
+
            
     - type: switch
       immediate_edit: true
@@ -171,7 +205,8 @@ graphical_display_menu:
           lambda: 'ESP_LOGI("display_menu", "leave: %s", it->get_text().c_str());'
       items:
         - type: back
-          text: 'Back'
+          text: !lambda |-
+            return "← Alarm: " + id(alarm_state).state;
         - type: command
           text: 'Ustaw na 6:30'
           on_value:
@@ -181,11 +216,33 @@ graphical_display_menu:
                 data:
                   entity_id: input_datetime.budzik
                   time: "06:30:00"
-    - type: label
-      text: 'Insert Wifi strength here'
-
-
-
+        - type: command
+          text: 'Ustaw na 5:30'
+          on_value:
+            then:
+             - homeassistant.service:
+                service: input_datetime.set_datetime
+                data:
+                  entity_id: input_datetime.budzik
+                  time: "05:30:00"
+        - type: command
+          text: 'Wyłącz 0:0'
+          on_value:
+            then:
+             - homeassistant.service:
+                service: input_datetime.set_datetime
+                data:
+                  entity_id: input_datetime.budzik
+                  time: "00:00:00"                  
+        - type: command
+          text: 'Ustaw na 9:00'
+          on_value:
+            then:
+             - homeassistant.service:
+                service: input_datetime.set_datetime
+                data:
+                  entity_id: input_datetime.budzik
+                  time: "09:00:00"
     - type: menu
       text: 'Ustawienia'
       on_enter:
@@ -196,25 +253,28 @@ graphical_display_menu:
           lambda: 'ESP_LOGI("display_menu", "leave: %s", it->get_text().c_str());'
       items:
         - type: back
-          text: 'Back'
+          text: '←'
                  
         - type: command
           text: '!Restart!'
           on_value:
              then:
-               - button.press: restart_but
-        - type: command
-          text: 'Ustaw na 5:30'
-          on_value:
-            then: 
-              - homeassistant.action:
-              #fill with action
+               - button.press: but_restart
+        - type: label
+          text: !lambda |-
+            return "WiFi: " + to_string(id(wifi_signal_db).state) + " dBm";
+
 
 # Input keys CHANGE FOR PRODUCTION
 binary_sensor:
-  - platform: sdl   #UP
+  - platform: gpio   #UP
     id: key_up
-    key: SDLK_a
+    pin:
+      number: GPIO1
+      mode:
+        input: true
+        pullup: true
+      inverted: True
     on_press:
       then:
         - script.execute: oledoff_timer
@@ -228,9 +288,14 @@ binary_sensor:
             else:
               - display_menu.up: menu
 
-  - platform: sdl #DOWN
+  - platform: gpio #DOWN
     id: key_down
-    key: SDLK_s
+    pin:
+      number: GPIO2
+      mode:
+        input: true
+        pullup: true
+      inverted: True
     on_press:
       then:
         - script.execute: oledoff_timer
@@ -244,9 +309,14 @@ binary_sensor:
             else:
               - display_menu.down: menu
             
-  - platform: sdl #Enter
+  - platform: gpio #Enter
     id: key_right
-    key: SDLK_f
+    pin:
+      number: GPIO3
+      mode:
+        input: true
+        pullup: true
+      inverted: True
     on_press:
       then:
         - script.execute: oledoff_timer
@@ -260,16 +330,22 @@ binary_sensor:
             else:
               - display_menu.enter: menu
               
-  - platform: sdl #Special button that cycles beetwen timemenu and screen off
+  - platform: gpio
+     #Special button that cycles beetwen timemenu and screen off
     id: key_cycle
-    key: SDLK_d
+    pin:
+      number: GPIO4
+      mode:
+        input: true
+        pullup: true
+      inverted: True
     on_press:
       then:
       - if:
           condition:
               or: 
               - display.is_displaying_page: blank
-                display_menu.is_active: menu
+              - display_menu.is_active: menu
           then:
             - display.page.show: timemenu
           else:
