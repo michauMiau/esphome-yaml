@@ -94,7 +94,7 @@ display:
       - id: timemenu
         lambda: |-
           // Print time until alarm in top center
-          it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm: %s", id(alarm_state).state.c_str());
+          it.printf(0, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm: %s", id(alarm_state).state.c_str());
 
           // Print time in HH:MM format
           it.strftime(0, 60, id(large_font), TextAlign::BASELINE_LEFT, "%H:%M", id(esptime).now());
