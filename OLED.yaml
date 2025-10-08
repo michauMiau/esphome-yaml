@@ -175,11 +175,14 @@ graphical_display_menu:
         - type: command
           text: 'Ustaw na 6:30'
           on_value:
-            then: 
-              - homeassistant.action:
-              #fill with action
-        - type: label
-          text: 'Insert Wifi strength here'
+            then:
+             - homeassistant.service:
+                service: input_datetime.set_datetime
+                data:
+                  entity_id: input_datetime.budzik
+                  time: "06:30:00"
+    - type: label
+      text: 'Insert Wifi strength here'
 
 
 
