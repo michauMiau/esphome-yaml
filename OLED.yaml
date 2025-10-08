@@ -33,10 +33,7 @@ text_sensor:
     id: alarm_state
     internal: true
     
-button:
-  - platform: restart
-    id: restart_but       
-    internal: false   #Set to false disable restart button in HA      
+ 
 
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Things from ha to adjust
 
@@ -62,7 +59,7 @@ font:
     extras:
       - file: "gfonts://Roboto"
         glyphs: [ł,ś,Ł] #if you are using a foreign language or special characters, you have to add them here
-  - file: "gfonts://Bitcount+Ink"
+  - file: "gfonts://BBH+Sans+Bogle"
     id: large_font
     size: 31
     
@@ -78,12 +75,8 @@ i2c: # Replace with spi if using it
 display:
     i2c_id: bus_oled
     model: "SSD1306 128x64"
-#    reset_pin: D0
     address: 0x3C
     id: oled_display
-#    dimensions:
-#      width: 128
-#      height: 64
     update_interval: 100ms
     pages:
       - id: timemenu
@@ -156,11 +149,25 @@ graphical_display_menu:
       on_value:
          then:
            - button.press: restart_but
+
+    - type: menu
+      text: 'Test Submenu'
+      on_enter:
+        then:
+          lambda: 'ESP_LOGI("display_menu", "enter: %s", it->get_text().c_str());'
+      on_leave:
+        then:
+          lambda: 'ESP_LOGI("display_menu", "leave: %s", it->get_text().c_str());'
+      items:
+        - type: label
+          text: 'Label'
+        - type: back
+          text: 'Back'
       
 
 # Input keys CHANGE FOR PRODUCTION
 binary_sensor:
-  - platform: sdl
+  - platform: sdl   #UP
     id: key_up
     key: SDLK_a
     on_press:
@@ -176,7 +183,7 @@ binary_sensor:
             else:
               - display_menu.up: menu
 
-  - platform: sdl
+  - platform: sdl #DOWN
     id: key_down
     key: SDLK_s
     on_press:
@@ -191,23 +198,8 @@ binary_sensor:
               - display_menu.show: menu
             else:
               - display_menu.down: menu
-
-  - platform: sdl #special button that cycles beetwen timemenu and screen off
-    id: key_left
-    key: SDLK_d
-    on_press:
-      then:
-      - if:
-          condition:
-              or: 
-              - display.is_displaying_page: blank
-#INSERT DISPLAY IS DISPLAYING MENU IDK WHAT THE RIGHT CONDITION IS
-          then:
-            - display.page.show: timemenu
-          else:
-            - display.page.show: blank
-
-  - platform: sdl
+            
+  - platform: sdl #Enter
     id: key_right
     key: SDLK_f
     on_press:
@@ -222,4 +214,76 @@ binary_sensor:
               - display_menu.show: menu
             else:
               - display_menu.enter: menu
+              
+  - platform: sdl #Special button that cycles beetwen timemenu and screen off
+    id: key_cycle
+    key: SDLK_d
+    on_press:
+      then:
+      - if:
+          condition:
+              or: 
+              - display.is_displaying_page: blank
+                display_menu.is_active: menu
+          then:
+            - display.page.show: timemenu
+          else:
+            - display.page.show: blank
 
+
+button: # Buttons for HA
+
+  - platform: restart
+    id: but_restart
+    name: Restart
+    internal: false   #Set to true to disable restart button in HA     
+
+  - platform: template
+    name: UP Key
+    id: but_up
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.up: menu
+
+
+
+  - platform: template
+    name: Down Key
+    id: but_down
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.down: menu
+              
+  - platform: template
+    name: Enter Key
+    id: but_Enter
+    on_press:
+      then:
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+                or:
+                - display.is_displaying_page: blank
+                - display.is_displaying_page: timemenu                
+            then:
+              - display_menu.show: menu
+            else:
+              - display_menu.enter: menu
