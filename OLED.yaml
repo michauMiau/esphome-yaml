@@ -192,12 +192,21 @@ binary_sensor:
             else:
               - display_menu.down: menu
 
-  - platform: sdl
+  - platform: sdl #special button that cycles beetwen timemenu and screen off
     id: key_left
     key: SDLK_d
     on_press:
       then:
-      - display_menu.show: menu
+      - if:
+          condition:
+              or: 
+              - display.is_displaying_page: blank
+#INSERT DISPLAY IS DISPLAYING MENU IDK WHAT THE RIGHT CONDITION IS
+          then:
+            - display.page.show: timemenu
+          else:
+            - display.page.show: blank
+
   - platform: sdl
     id: key_right
     key: SDLK_f
