@@ -21,18 +21,24 @@ switch:
         
 sensor:
   - platform: homeassistant
-    id: inside_temperature
+    id: weather_temperature
     entity_id: weather.forecast_dom
     internal: true
-    
+  - platform: homeassistant
+    id: inside_temperature
+    entity_id: sensor.oled_control_living_room_temperature
+    internal: true
 
 text_sensor:
   - platform: homeassistant
     entity_id: input_datetime.budzik 
-    name: "Alarm time"
     id: alarm_state
     internal: true
-    
+  - platform: homeassistant
+    id: weather_temperature_unit
+    entity_id: weather.forecast_dom
+    attribute: temperature_unit
+    internal: true
  
 
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Things from ha to adjust
@@ -90,6 +96,11 @@ display:
           // Print inside temperature
           if (id(inside_temperature).has_state()) {
             it.printf(127, 23, id(small_font), TextAlign::TOP_RIGHT , "%.1f", id(inside_temperature).state);
+          }
+          // Print outside temperature (from homeassistant weather)
+          if (id(weather_temperature).has_state()) {
+            it.printf(127, 60, id(medium), TextAlign::BASELINE_RIGHT , "%.1f%s",
+                      id(weather_temperature).state, id(weather_temperature_unit).state.c_str());
           }
 
 
