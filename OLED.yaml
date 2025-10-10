@@ -7,6 +7,18 @@ logger: #0 bauds
 api:
 #^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
 # Here are the things you need to adjust for ha
+ota:
+  - platform: esphome
+    password: "fe1440059f837ccd0a04e4917c23f8e8"
+    on_begin: 
+      then:
+        - display.page.show: ota_in_progress
+        - script.stop: oledoff_timer
+
+
+logger:
+  baud_rate: 0
+
 switch:             
   - platform: homeassistant
     id: light_ha
@@ -14,7 +26,7 @@ switch:
     internal: true
     
   - platform: template
-    internal: false
+    name: Screen on
     id: Screen_on      #Keep the screen on
     turn_on_action:
         - display.page.show: timemenu
@@ -22,6 +34,7 @@ switch:
 sensor:
   - platform: homeassistant
     id: weather_temperature
+    attribute: temperature
     entity_id: weather.forecast_dom
     internal: true
   - platform: homeassistant
@@ -45,7 +58,15 @@ text_sensor:
     entity_id: weather.forecast_dom
     attribute: temperature_unit
     internal: true
- 
+  - platform: wifi_info
+    ip_address:
+      name: ESP IP Address
+      id: ip_addr
+      update_interval: 5min
+    ssid:
+      name: ESP Connected SSID
+      id: esp_ssid
+      update_interval: 5min
 
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Things from ha to adjust
 
@@ -67,13 +88,13 @@ script:  #Turns off screen after an interval, resets the timer every time it's c
 font:
   - file: "gfonts://Google+Sans+Code"
     id: small_font
-    size: 14
+    size: 12
     extras:
       - file: "gfonts://Google+Sans+Code"
-        glyphs: [ł,ś,Ł,←] #if you are using a foreign language or special characters, you have to add them here
+        glyphs: [ł,ś,Ł,←,ą] #if you are using a foreign language or special characters, you have to add them here
   - file: "gfonts://BBH+Sans+Bogle"
     id: large_font
-    size: 31
+    size: 34
     
 time:
   - platform: homeassistant
@@ -83,14 +104,17 @@ i2c: # Replace with spi if using it
  - id: bus_oled
    sda: GPIO8
    scl: GPIO9
+#   scan: True
 # Display and Pages
 display:
   - platform: ssd1306_i2c
     i2c_id: bus_oled
     model: "SSD1306 128x64"
     address: 0x3C
+    flip_y: false #set to true if screen not inverted
+    flip_x: false #set to ^^^^^^^^^^^^^^^^^^^^^^^^^^^
     id: oled_display
-    update_interval: 100ms
+    update_interval: 50ms
     pages:
      - id: timemenu
        lambda: |-
@@ -100,7 +124,7 @@ display:
         } else {
           auto now = id(esptime).now();
           if (!now.is_valid()) {
-            it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm: --:--");
+            it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm:--:--");
           } else {
             // Parse HH:MM from the alarm_state text
             int alarm_hour = 0, alarm_min = 0;
@@ -122,7 +146,7 @@ display:
 
             // Print alarm time and time until alarm
             char buf[64];
-            sprintf(buf, "Alarm: %02d:%02d (in %dh %02dm)", alarm_hour, alarm_min, hours, minutes);
+            sprintf(buf, "%02d:%02d w %dh %02dm", alarm_hour, alarm_min, hours, minutes);
             it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "%s", buf);
           }
         }
@@ -145,6 +169,9 @@ display:
      - id: blank
        lambda: |-
           it.print(0, 10, id(small_font), "");
+     - id: ota_in_progress
+       lambda: |-
+          it.print(0, 60, id(small_font), TextAlign::BASELINE_LEFT, "OTA Update in progress");
       
 # GUI menu entry FILL FOR PROD
 graphical_display_menu:
@@ -154,7 +181,7 @@ graphical_display_menu:
     then:
       component.update: oled_display
   active: false
-  mode: joystick
+  mode: rotary
   font: small_font
   items:    
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Menu items to adjust
@@ -255,22 +282,27 @@ graphical_display_menu:
         - type: back
           text: '←'
                  
+        - type: label
+          text: !lambda |-
+            return "WiFi: " + to_string(id(wifi_signal_db).state) + " dBm";
+        - type: label
+          text: !lambda |-
+            return "SSID: " + id(esp_ssid).state;            
+        - type: label
+          text: !lambda |-
+            return "IP: " + id(ip_addr).state;
         - type: command
           text: '!Restart!'
           on_value:
              then:
                - button.press: but_restart
-        - type: label
-          text: !lambda |-
-            return "WiFi: " + to_string(id(wifi_signal_db).state) + " dBm";
-
-
 # Input keys CHANGE FOR PRODUCTION
 binary_sensor:
   - platform: gpio   #UP
     id: key_up
+#    name: up
     pin:
-      number: GPIO1
+      number: GPIO2
       mode:
         input: true
         pullup: true
@@ -290,8 +322,9 @@ binary_sensor:
 
   - platform: gpio #DOWN
     id: key_down
+#    name: DOWN
     pin:
-      number: GPIO2
+      number: GPIO1
       mode:
         input: true
         pullup: true
@@ -330,26 +363,29 @@ binary_sensor:
             else:
               - display_menu.enter: menu
               
-  - platform: gpio
+
      #Special button that cycles beetwen timemenu and screen off
+  - platform: gpio
     id: key_cycle
     pin:
       number: GPIO4
       mode:
         input: true
         pullup: true
-      inverted: True
+      inverted: true
     on_press:
       then:
-      - if:
-          condition:
-              or: 
-              - display.is_displaying_page: blank
-              - display_menu.is_active: menu
-          then:
-            - display.page.show: timemenu
-          else:
-            - display.page.show: blank
+        - script.execute: oledoff_timer
+        - if:
+            condition:
+              or:
+                - display_menu.is_active: menu
+                - not:
+                    display.is_displaying_page: timemenu
+            then:
+              - display.page.show: timemenu
+            else:
+              - display.page.show: blank
 
 
 button: # Buttons for HA
