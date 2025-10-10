@@ -29,4 +29,3 @@ Uses a remote(one button) and a contact sensor that detects wheter the gate is o
 [YAML here](gate.yaml)
 
 #
-I'd like to thank our benefactors for allowing this to happen
