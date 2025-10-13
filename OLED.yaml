@@ -7,7 +7,7 @@ logger: #0 bauds
 api:
 #^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
 # Here are the things you need to adjust for ha
-sphome:
+esphome:
   name: esp-c3mini
   friendly_name: control_thingy
   on_boot: 
