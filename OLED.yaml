@@ -1,14 +1,5 @@
 esphome:
-    name: testhost
-host:
-
-logger: #0 bauds
-
-api:
-#^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
-# Here are the things you need to adjust for ha
-esphome:
-  name: esp-c3mini
+  name: esp-c3mini  #name here
   friendly_name: control_thingy
   on_boot: 
     then:
@@ -16,7 +7,7 @@ esphome:
       
 ota:
   - platform: esphome
-    password: "fe1440059f837ccd0a04e4917c23f8e8"
+    password: 
     on_begin: 
       then:
         - display.page.show: ota_in_progress
