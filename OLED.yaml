@@ -7,6 +7,13 @@ logger: #0 bauds
 api:
 #^^^^^^^^^^^^^^^^^^^^^^^^ Remove and replace with autogen from esphome
 # Here are the things you need to adjust for ha
+sphome:
+  name: esp-c3mini
+  friendly_name: control_thingy
+  on_boot: 
+    then:
+      - script.execute: oledoff_timer  
+      
 ota:
   - platform: esphome
     password: "fe1440059f837ccd0a04e4917c23f8e8"
@@ -81,6 +88,7 @@ script:  #Turns off screen after an interval, resets the timer every time it's c
                   switch.is_off: Screen_on
             then:
                 - display.page.show: blank
+                - switch.turn_off: Screen_on
             else:
                 - display.page.show: timemenu  
       
@@ -375,14 +383,16 @@ binary_sensor:
       inverted: true
     on_press:
       then:
+
         - script.execute: oledoff_timer
         - if:
             condition:
               or:
-                - display_menu.is_active: menu
+#                - display_menu.is_active: menu
                 - not:
                     display.is_displaying_page: timemenu
             then:
+              - display_menu.show_main: menu
               - display.page.show: timemenu
             else:
               - display.page.show: blank
