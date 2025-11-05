@@ -3,7 +3,7 @@
 My yaml configs for esphome (def not vibecoded)
 
 ### [TODO](to%20do.md)
-# The AlarmClock/Nighttime device for controling your smarthome
+# The Menu Night-time device for controling your smarthome
 
 I have no idea what to call this (maybe prehistoric dashboard?)
 
