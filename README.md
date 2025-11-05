@@ -13,7 +13,7 @@ For this to be an alarm clock you still have to add a speaker
 
 [YAML here](OLED.yaml)
 
-[Test code for no buttons](testcode.yaml)
+[Test code for no buttons](testcode.yaml) (a little outdated)
 
 To actually use this yourself you still have to make a lot of changes so be warned!
 
