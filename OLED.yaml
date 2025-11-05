@@ -57,7 +57,7 @@ switch:
 
   - platform: homeassistant
     id: switch_ha
-    entity_id: switch.ikea_of_sweden_tretakt_smart_plug_2
+    entity_id: switch.ikea_of_sweden_tretakt_smart_plug_2  # How fancy
     internal: true
     
   - platform: template
