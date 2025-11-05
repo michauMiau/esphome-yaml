@@ -1,5 +1,37 @@
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    sdkconfig_options:
+      CONFIG_FREERTOS_UNICORE: n
+      CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ: "170"     # Speed Improving options (i hope)
+    type: esp-idf
+    advanced:
+      # Performance options (enabled by default)
+      enable_lwip_tcpip_core_locking: true  # Better socket performance
+      enable_lwip_check_thread_safety: true  # Thread safety validation
+      # Memory saving options
+      enable_lwip_dhcp_server: false  # Disabled by default, only needed for AP mode
+      compiler_optimization: PERF
+
+#logger: # Should be disabled unless testing, consumes a lot of memory
+#  baud_rate: 0 
+
+api:
+  encryption:
+    key: ""
+  reboot_timeout: 3min 
+  
+wifi:
+  networks:
+  - ssid: !secret wifi_ssid
+    password: !secret wifi_password
+  power_save_mode: none
+  output_power: 20.5dB
+  enable_btm: true
+  reboot_timeout: 3min 
+      
 esphome:
-  name: esp-c3mini  #name here
+  name: esp-c3mini
   friendly_name: control_thingy
   on_boot: 
     then:
@@ -7,20 +39,25 @@ esphome:
       
 ota:
   - platform: esphome
-    password: 
-    on_begin: 
-      then:
-        - display.page.show: ota_in_progress
-        - script.stop: oledoff_timer
+    password: ""
+#    on_begin: 
+#      then:
+#        - display.page.show: ota_in_progress
+#        - script.stop: oledoff_timer
 
 
-logger:
-  baud_rate: 0
+#logger:
+#  baud_rate: 0
 
 switch:             
   - platform: homeassistant
     id: light_ha
     entity_id: light.wiz_rgbww_tunable_ad1dee
+    internal: true
+
+  - platform: homeassistant
+    id: switch_ha
+    entity_id: switch.ikea_of_sweden_tretakt_smart_plug_2
     internal: true
     
   - platform: template
@@ -35,16 +72,19 @@ sensor:
     attribute: temperature
     entity_id: weather.forecast_dom
     internal: true
+#    update_interval: 5min
   - platform: homeassistant
     id: inside_temperature
     entity_id: sensor.oled_control_living_room_temperature
     internal: true
-    #more here
+#    update_interval: 5min
+
   - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
     name: "WiFi Signal dB"
     id: wifi_signal_db
     update_interval: 5min
     entity_category: "diagnostic"
+    internal: True #Disabled rn because i don't need it. Set to False to enable
     
 text_sensor:
   - platform: homeassistant
@@ -61,25 +101,26 @@ text_sensor:
       name: ESP IP Address
       id: ip_addr
       update_interval: 5min
+      internal: True #Comment this line if you want to see this in Home Assistant
     ssid:
       name: ESP Connected SSID
       id: esp_ssid
       update_interval: 5min
+      internal: true #Comment this line if you want to see this in Home Assistant
 
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Things from ha to adjust
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Things from HA to adjust
 
 script:  #Turns off screen after an interval, resets the timer every time it's called
   - id: oledoff_timer
     mode: restart
     then:
-      - logger.log: "Timer fired!"
+#      - logger.log: "Timer fired!" #Needs to be commented out when logger is disabled
       - delay: 15s
       - if:
             condition:
                   switch.is_off: Screen_on
             then:
                 - display.page.show: blank
-                - switch.turn_off: Screen_on
             else:
                 - display.page.show: timemenu  
       
@@ -90,7 +131,7 @@ font:
     size: 12
     extras:
       - file: "gfonts://Google+Sans+Code"
-        glyphs: [ł,ś,Ł,←,ą] #if you are using a foreign language or special characters, you have to add them here
+        glyphs: [ł,ś,Ł,←,ą] #If you are using a foreign language or special characters, you have to add them here
   - file: "gfonts://BBH+Sans+Bogle"
     id: large_font
     size: 34
@@ -103,7 +144,8 @@ i2c: # Replace with spi if using it
  - id: bus_oled
    sda: GPIO8
    scl: GPIO9
-#   scan: True
+   scan: false #Makes things slow if set to true
+   frequency: 400kHz # Unsure if helps performance (IT DOES)
 # Display and Pages
 display:
   - platform: ssd1306_i2c
@@ -111,15 +153,15 @@ display:
     model: "SSD1306 128x64"
     address: 0x3C
     flip_y: false #set to true if screen not inverted
-    flip_x: false #set to ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    flip_x: false #   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
     id: oled_display
-    update_interval: 50ms
+    update_interval: 250ms # Recommend keeping to a lower value, keeps CPU load lower and the display updates regardless when something happens in the menu
     pages:
      - id: timemenu
        lambda: |-
         // --- Alarm time display and countdown ---
         if (id(alarm_state).state.empty()) {
-          it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "Alarm: None");
+          it.printf(64, 0, id(small_font), TextAlign::TOP_CENTER, "Brak Alarmu"); //TEXT to display if there is no alarm
         } else {
           auto now = id(esptime).now();
           if (!now.is_valid()) {
@@ -165,14 +207,14 @@ display:
         }
 
 
-     - id: blank
+     - id: blank # For OLED screens just showing nothing works for turning the screen off (will have to fix for LCDs tho)
        lambda: |-
           it.print(0, 10, id(small_font), "");
-     - id: ota_in_progress
-       lambda: |-
-          it.print(0, 60, id(small_font), TextAlign::BASELINE_LEFT, "OTA Update in progress");
+#     - id: ota_in_progress
+#       lambda: |-
+#          it.print(0, 60, id(small_font), TextAlign::BASELINE_LEFT, "OTA Update in progress");
       
-# GUI menu entry FILL FOR PROD
+# GUI menu 
 graphical_display_menu:
 - id: menu
   display: oled_display
@@ -184,19 +226,7 @@ graphical_display_menu:
   font: small_font
   items:    
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Menu items to adjust
-    - type: command
-      text: !lambda |-
-        char buffer[6];
-        auto time = id(esptime).now();
-        if (time.is_valid()) {
-          time.strftime(buffer, sizeof(buffer), "%H:%M");
-          return std::string(buffer);
-        } else {
-          return std::string("Time unavail-");
-        }
-      on_value:
-         then:
-           - display.page.show: timemenu
+
 
     - type: command
       text: "Zasłony"
@@ -214,12 +244,13 @@ graphical_display_menu:
       on_text: 'WŁ'
       off_text: 'WYŁ'
       switch: light_ha
-           
-    - type: command
-      text: 'Uśpij'
-      on_value:
-         then:
-           - display.page.show: blank
+    - type: switch
+      immediate_edit: true
+      text: 'Wtyczka 1'
+      on_text: 'WŁ'
+      off_text: 'WYŁ'
+      switch: switch_ha
+
 
     - type: menu
       text: 'Budzik'
@@ -269,6 +300,12 @@ graphical_display_menu:
                 data:
                   entity_id: input_datetime.budzik
                   time: "09:00:00"
+                      
+    - type: command
+      text: 'Uśpij'
+      on_value:
+         then:
+           - display.page.show: blank
     - type: menu
       text: 'Ustawienia'
       on_enter:
@@ -295,7 +332,23 @@ graphical_display_menu:
           on_value:
              then:
                - button.press: but_restart
-# Input keys CHANGE FOR PRODUCTION
+
+    - type: command
+      text: 'Czas ←'
+#      text: !lambda |- # Code that displays the time (commented because i don't really need it)
+#        char buffer[6];
+#        auto time = id(esptime).now();
+#        if (time.is_valid()) {
+#          time.strftime(buffer, sizeof(buffer), "%H:%M");
+#          return std::string(buffer);
+#        } else {
+#          return std::string("Time unavail-");
+#        }
+      on_value:
+         then:
+           - display.page.show: timemenu
+
+# Input keys ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 binary_sensor:
   - platform: gpio   #UP
     id: key_up
@@ -389,7 +442,7 @@ binary_sensor:
               - display.page.show: blank
 
 
-button: # Buttons for HA
+button: # Buttons for HA ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   - platform: restart
     id: but_restart
