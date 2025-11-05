@@ -29,4 +29,3 @@ Uses a remote(one button) and a contact sensor that detects wheter the gate is o
 [YAML here](gate.yaml)
 
 #
-[CODE_OF_CONDUCT.md]
