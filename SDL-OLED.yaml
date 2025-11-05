@@ -1,4 +1,5 @@
 #THIS file contains things you need to get the OLED.yaml project running on SDL (how i used to test everything before getting real hardware
+#HIGHLY OUT OF DATE you're better of modifying the original file to work on sdl 
 esphome:
     name: testhost
 host:
