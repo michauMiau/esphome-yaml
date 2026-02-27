@@ -1,8 +1,8 @@
 ## esphome-yaml
 
 My yaml configs for esphome (def not vibecoded)
+[![myownbadge](/badges/made-with-yaml.png)](https://forthebadge.com)
 
-### [TODO](to%20do.md)
 # The Menu Night-time device for controling your smarthome
 
 I have no idea what to call this (maybe prehistoric dashboard?)
