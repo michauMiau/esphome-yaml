@@ -1,0 +1,343 @@
+esphome:
+  name: "voice"
+  friendly_name:
+#  on_boot: 
+#    then:
+#     - light.turn_on:
+#          id: onboard_led
+#          brightness: 50%
+#      - delay: 5s
+#      - light.turn_off:
+#          id: onboard_led   
+              
+esp32: # ESP-S3-ZERO
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    advanced:
+      assertion_level: SILENT # Reduces Binary size
+      enable_lwip_dhcp_server: false # dhcp server for ap mode
+      enable_lwip_mdns_queries: false # Disables mDNS like broker.local 
+      compiler_optimization: SIZE
+      execute_from_psram: True
+      enable_ota_rollback: False
+    sdkconfig_options: 
+      CONFIG_FREERTOS_UNICORE: n
+      CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ: "240"
+  cpu_frequency: 240MHZ
+
+psram: # 2MB PSRAM for The ESP-S3-ZERO
+  mode: quad
+  speed: 80MHz
+  ignore_not_found: false
+
+# Enable logging
+logger:
+#  baud_rate: 0
+
+# Enable Home Assistant API
+api:
+  batch_delay: 200ms
+  on_client_connected: 
+    then:
+      - light.turn_on: 
+          id: onboard_led
+          blue: 1
+          green: 1
+          red: 1
+      - delay: 5s
+      - light.turn_off: onboard_led  
+# Allow Over-The-Air updates
+ota:
+  - platform: esphome
+    password: 
+
+wifi:
+  networks:
+#  - ssid: !secret wifi_ssid2
+#    password: !secret wifi_password2
+  - ssid: !secret wifi_ssid
+    password: !secret wifi_password
+    priority: 127
+  enable_btm: true
+  enable_rrm: true
+  use_psram: true
+  min_auth_mode: WPA3  
+  output_power: 18db
+#  post_connect_roaming: True
+
+i2s_audio:
+  - id: i2s_output # Speaker
+    i2s_bclk_pin: GPIO4
+    i2s_lrclk_pin: GPIO6
+
+  - id: i2s_input # Microphone 
+    i2s_lrclk_pin:
+      number: GPIO12
+    i2s_bclk_pin:
+      number: GPIO13
+
+microphone:
+  - platform: i2s_audio
+    id: i2s_mics
+    adc_type: external
+    i2s_din_pin: GPIO11
+    channel: left
+    i2s_audio_id: i2s_input
+
+speaker:
+  - platform: i2s_audio
+    dac_type: external
+    i2s_audio_id: i2s_output
+    i2s_dout_pin: GPIO5
+    id: i2s_audio_speaker
+#    buffer_duration: 
+#      200ms
+
+  - platform: mixer
+    id: mixing_speaker
+    output_speaker: i2s_audio_speaker
+    num_channels: 1
+    task_stack_in_psram: true
+    source_speakers:
+      - id: announcement_mixing_input        
+        timeout: 5s
+      - id: media_mixing_input
+        timeout: 5s
+
+#micro_wake_word:
+#  models:
+#    - model: okay_nabu
+
+sendspin:
+  id: sendspin_hub
+  task_stack_in_psram:  true
+
+http_request:
+  buffer_size_rx: 2048  # Reduces CPU load when streaming audio
+
+external_components:
+  - source:
+      # https://github.com/esphome/esphome/pull/12429
+      type: git
+      url: https://github.com/esphome/esphome
+      ref: ff8ce89556748509d7ee8724e12d9d43d3c8c1e8
+    refresh: 0s
+    components: [http_request]
+
+  - source: github://pr#14933
+    components: [const, generic_image, media_source, sendspin]
+    refresh: 1h
+  
+media_source:
+#  - platform: audio_file
+#    id: audio_file_announcement_source
+  - platform: http_request
+    id: http_announcement_source
+    buffer_size: 150000
+  - platform: http_request
+    id: http_media_source
+    buffer_size: 400000
+  - platform: sendspin
+    id: sendspin_media_source
+
+media_player:
+  - platform: sendspin
+    id: sendspin_group_media_player
+
+  - platform: speaker_source
+#    codec_support_enabled: needed
+#    task_stack_in_psram: true
+#    buffer_size: 400000
+    announcement_pipeline:
+      sources:
+#        - audio_file_announcement_source
+        - http_announcement_source
+      speaker: announcement_mixing_input
+      format: FLAC     # FLAC is the least processor intensive codec
+      num_channels: 1  # Stereo audio is unnecessary for announcements
+      sample_rate: 48000
+    media_pipeline:
+      format: FLAC     # FLAC is the least processor intensive codec
+      num_channels: 1
+      sample_rate: 48000
+      speaker: media_mixing_input
+      sources:
+        - sendspin_media_source
+    name: "Main Player"
+    id: external_media_player
+    on_pause: 
+      then:
+        - light.turn_on:
+            id: onboard_led
+            red: 100%
+            blue: 10%
+            green: 100%
+            brightness: 30%
+        - delay: 500ms
+        - light.turn_off:
+            id: onboard_led            
+    on_play: 
+      then:
+        - light.turn_on:
+            id: onboard_led
+            brightness: 40%
+            red: 100%
+            blue: 10%
+            green: 10%
+        - delay: 500ms
+        - light.turn_off:
+            id: onboard_led  
+
+light:
+  - platform: esp32_rmt_led_strip
+    rgb_order: GRB
+    chipset: WS2812
+    pin: GPIO21 #This board has the ws2812 led on gpio21 instead of 48, the c3 version has it on 10
+    name: "Nabu Voice LED"
+    num_leds: 1
+    default_transition_length: 300ms
+    id: onboard_led
+    effects: 
+      - strobe: 
+      - addressable_color_wipe: 
+      - addressable_rainbow: 
+      - addressable_twinkle: 
+      - addressable_random_twinkle: 
+
+voice_assistant:
+  microphone: i2s_mics
+  media_player: external_media_player
+  use_wake_word: True
+  noise_suppression_level: 1
+  on_start:
+    - media_player.pause: external_media_player
+    - light.turn_on:
+        id: onboard_led
+        effect: rainbow
+
+
+  on_error: 
+    then:
+      - light.turn_on:
+          id: onboard_led
+          blue: 0
+          green: 0
+          red: 1
+          effect: "Twinkle"
+      - delay: 5s
+      - light.turn_off: onboard_led
+      - voice_assistant.stop: 
+          
+  on_stt_vad_end:
+#    - media_player.play_media: 'https://github.com/rhasspy/wyoming-satellite/raw/refs/heads/master/sounds/done.wav'   
+    - light.turn_on:
+        id: onboard_led
+        effect: "Color Wipe"
+
+  on_tts_end: 
+    then:
+      - light.turn_off: onboard_led
+      
+  on_end: 
+    then:
+      - light.turn_off: onboard_led
+
+  on_tts_start: 
+    then:
+      light.turn_on:
+        id: onboard_led
+        effect: "Random Twinkle"
+
+
+
+esp32_touch:
+  setup_mode: false
+  measurement_duration: 0.25ms  # Much lower than the 8ms default
+  sleep_duration: 0.75ms
+#  id: esp32_touch_pad
+
+button:
+  - platform: template
+    name: Aktywuj Nabu Voice
+    on_press: 
+      then:
+        - if:
+            condition: voice_assistant.is_running
+            then:
+              - voice_assistant.stop:
+            else:
+              - voice_assistant.start:
+#  - platform: template
+#    name: Wake word
+#    on_press: 
+#      then:
+#        - micro_wake_word.start: 
+            
+binary_sensor:
+  - platform: esp32_touch
+#    name: "Pause Touch"
+    id: action_button
+    pin: GPIO7
+    threshold: 200000  # Adjust based on your hardware          
+ #   on_click:
+    on_press: 
+      then:
+        - light.turn_on:
+            id: onboard_led
+            red: 1.0
+            blue: 0
+            green: 0
+            transition_length: 50ms
+            brightness: 100%
+    on_release: 
+      then:
+        - light.turn_off: onboard_led
+        - if:
+            condition: voice_assistant.is_running
+            then:
+              - voice_assistant.stop:
+            else:
+              - voice_assistant.start:
+
+  - platform: esp32_touch
+    id: volume_up_button
+#    name: "Volume +"
+    pin: GPIO9
+    threshold: 200000         
+#    on_click: 
+#      then:
+    on_press: 
+      then:
+        - light.turn_on:
+            id: onboard_led
+            red: 100%
+            green: 100%
+            blue: 0%
+            transition_length: 50ms
+            brightness: 100%
+    on_release: 
+      then:
+        - light.turn_off: onboard_led
+        - media_player.volume_up: external_media_player
+
+  - platform: esp32_touch
+#    name: "Volume -"
+    id: volume_down_button
+    pin: GPIO8
+    threshold: 200000       
+#    on_click: 
+#      then:
+    on_press: 
+      then:
+        - light.turn_on:
+            id: onboard_led
+            red: 0
+            blue: 0
+            green: 1.0
+            transition_length: 50ms
+            brightness: 100%
+    on_release: 
+      then:
+        - light.turn_off: onboard_led
+        - media_player.volume_down: external_media_player
