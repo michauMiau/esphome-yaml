@@ -19,7 +19,7 @@ To actually use this yourself you still have to make a lot of changes so be warn
 
 # Blinds based on stepper motor
 
-Blind motor that uses the uln2003 motor driver + some 3d printed parts
+Blind motor that uses: PICO-W Microcontroller, ULN2003 motor driver, some 3d printed parts
 
 [YAML here](blinds.yaml)
 
