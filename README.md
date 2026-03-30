@@ -29,3 +29,5 @@ Uses a remote(one button) and a contact sensor that detects wheter the gate is o
 [YAML here](gate.yaml)
 
 #
+
+D()ŃT MłŃD T|-|Ę lŚŚUĘŚ, lM TĘŚTlŃG ŚÓMĘt|-|lŃG
