@@ -24,7 +24,7 @@ Blind motor that uses: PICO-W Microcontroller, ULN2003 motor driver, some 3d pri
 [YAML here](blinds.yaml)
 
 # Gate/Garage Door Opener 
-Uses a remote(one button) and a contact sensor that detects wheter the gate is opened or not
+Uses a One button remote for the gate and a contact sensor that detects wheter the gate is opened or not
 
 [YAML here](gate.yaml)
 
