@@ -29,4 +29,4 @@ Uses a remote(one button) and a contact sensor that detects wheter the gate is o
 [YAML here](gate.yaml)
 
 #
-[![made-with-js-badge](/badges/made-with-js-badge.jpg)]
+![made-with-js-badge](/badges/made-with-js-badge.jpg)
