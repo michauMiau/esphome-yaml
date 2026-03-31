@@ -1,4 +1,4 @@
-## My YAML configs for esphome
+## My YAML configs for ESPHome
 
 [![made-with-yaml-badge](/badges/made-with-yaml.png)](https://forthebadge.com)
 
