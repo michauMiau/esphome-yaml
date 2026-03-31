@@ -1,7 +1,7 @@
 ## esphome-yaml
 
 My yaml configs for esphome (def not vibecoded)
-[![myownbadge](/badges/made-with-yaml.png)](https://forthebadge.com)
+[![made-with-yaml-badge](/badges/made-with-yaml.png)](https://forthebadge.com)
 
 # The Menu Night-time device for controling your smarthome
 
@@ -29,5 +29,4 @@ Uses a remote(one button) and a contact sensor that detects wheter the gate is o
 [YAML here](gate.yaml)
 
 #
-
-D()ŃT MłŃD T|-|Ę lŚŚUĘŚ, lM TĘŚTlŃG ŚÓMĘt|-|lŃG
+[![made-with-js-badge](/badges/made-with-js-badge.jpg)]
