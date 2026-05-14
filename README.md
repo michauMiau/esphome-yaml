@@ -2,6 +2,9 @@
 
 [![made-with-yaml-badge](/badges/made-with-yaml.png)](https://forthebadge.com)
 
+> Caution!
+> Highly Useful
+
 ### The Menu Night-time device for controling your smarthome *(now with voice!)* 
 
 I have no idea what to call this (maybe prehistoric dashboard?)
